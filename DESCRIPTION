@@ -18,5 +18,7 @@ Imports:
     purrr,
     readr,
     RSelenium,
+    rvest,
+    strex,
     stringr,
     telegram.bot
