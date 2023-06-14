@@ -11,19 +11,16 @@ jobs:
       GITHUB_PAT: ${{ secrets.GHPAT }}
       
     steps:
-      - name: Checkout
+      - name: Install R
         uses: actions/checkout@v3
-        
-      - name: Setup R
         uses: r-lib/actions/setup-r@v2
-        
+      
       - name: Install dependency
         run: sudo apt install libcurl4-openssl-dev libgit2-dev
-        
-      - name: Install R packages
-        run: | 
-          R -q -e 'install.packages(c("dplyr", "httr", "RSelenium", "jsonlite", "rvest", "stringr", "telegram.bot", "tidyr", "purrr", "glue", "genTS", "strex", "readr", "netstat"), dependencies = TRUE)'
-          
+      
+      - name: Install R Packages
+        uses: r-lib/actions/setup-r-dependencies@v2
+      
       - name: Run crawler and forwarder script
         run: | 
           Rscript scrape_send_linkedin.R
