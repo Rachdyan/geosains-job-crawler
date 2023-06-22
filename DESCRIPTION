@@ -14,7 +14,9 @@ Imports:
     dplyr,
     genTS,
     glue,
+    httr,
     jsonlite,
+    lubridate,
     netstat,
     purrr,
     readr,
@@ -22,4 +24,5 @@ Imports:
     rvest,
     strex,
     stringr,
-    telegram.bot
+    telegram.bot,
+    tidyr
