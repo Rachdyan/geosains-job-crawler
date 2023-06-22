@@ -1,3 +1,5 @@
+source("./function/send_message.R")
+source("./function/jobstreet.R")
 source("./function/linkedin.R")
 library(RSelenium)
 library(dplyr)
@@ -11,6 +13,10 @@ library(strex)
 library(readr)
 library(telegram.bot)
 
+bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
+chat_id <- 1415309056
+
+message("Getting Jobs From Linkedin")
 
 urls <- c(
   "https://www.linkedin.com/jobs/search/?currentJobId=3612329140&f_I=61%2C63%2C56%2C57&geoId=102478259&keywords=operator&location=Indonesia&refresh=true&sortBy=R&position=18&pageNum=0", 
@@ -26,8 +32,15 @@ urls <- c(
   "https://www.linkedin.com/jobs/search/?currentJobId=3612329140&f_I=61%2C63%2C56%2C57&geoId=102478259&keywords=head&location=Indonesia&refresh=true&sortBy=R&position=18&pageNum=0"
 )
 
-bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
-chat_id <- 1415309056
 
 map(urls, scrape_send_linkedin, bot_token, chat_id, remote = T)
 
+
+message("Getting Jobs From Jobstreet")
+
+keywords <- c("geologi", "geology", "mining", "mine", "tambang",
+              "surveyor", "gis", "migas", "oil and gas", "foreman",
+              "safety", "hse", "superintendent")
+
+
+scrape_send_jobstreet(keywords, bot_token, chat_id)
