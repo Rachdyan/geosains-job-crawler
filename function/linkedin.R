@@ -42,6 +42,7 @@ get_linkedin <- function(all_jobs_page){
       html_elements("div[class *= 'metadata'] > span[class *= 'location']") %>%
       html_text2()}, 
       error = function(e) NA)
+  job_location <- ifelse(str_detect(job_location, ", Indonesia$") == FALSE, glue("{job_location}, Indonesia"), job_location)
   job_location <- ifelse(is_empty(job_location), NA, job_location)
   
   job_salary <- tryCatch({all_jobs_page %>% 
@@ -191,7 +192,16 @@ send_message <- function(df, bot_token, chat_id){
     description <- glue("{description}\n\n")
   }
   
-  message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_before_first(', Indonesia')}\nLevel: {df$seniority_level} \n\n{description} \n{df$job_url}")
+  if(is.na(df$job_location) && is.na(df$seniority_level)){
+    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\n{description} \n{df$job_url}")
+  } else if(is.na(df$seniority_level) || df$source == "Jobstreet"){
+    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_before_first(', Indonesia')}\n\n{description} \n{df$job_url}")
+  } else if(is.na(df$job_location)){
+    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLevel: {df$seniority_level} \n\n{description} \n{df$job_url}")
+  } else {
+    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_before_first(', Indonesia')}\nLevel: {df$seniority_level} \n\n{description} \n{df$job_url}")
+  }
+  
   message <- message %>% str_replace_all("(\n{2})\n+", "\n\n") 
   
   glue("Sending message for {df$job_title} - {df$job_url}") %>% message()

@@ -30,3 +30,4 @@ bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
 chat_id <- 1415309056
 
 map(urls, scrape_send_linkedin, bot_token, chat_id, remote = T)
+
