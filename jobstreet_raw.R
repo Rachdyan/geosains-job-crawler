@@ -38,9 +38,12 @@ jobstreet_tidy <- jobstreet_enriched %>%
          employment_type, industries, job_description, applicant, get_time)
 
 
-job_scraped_new <- rbind(job_scraped, jobstreet_tidy)
-
-
+write.table(jobstreet_tidy,
+            file = "./data/job_scraped.csv", 
+            sep = ",",
+            append = T,
+            row.names = F,
+            col.names = F)
 
 
 bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"

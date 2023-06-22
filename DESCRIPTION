@@ -15,6 +15,7 @@ Imports:
     genTS,
     glue,
     httr,
+    janitor,
     jsonlite,
     lubridate,
     netstat,

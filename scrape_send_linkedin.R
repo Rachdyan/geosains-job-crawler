@@ -1,6 +1,3 @@
-source("./function/send_message.R")
-source("./function/jobstreet.R")
-source("./function/linkedin.R")
 library(RSelenium)
 library(jsonlite)
 library(lubridate)
@@ -15,6 +12,11 @@ library(strex)
 library(readr)
 library(httr)
 library(telegram.bot)
+library(janitor)
+source("./function/send_message.R")
+source("./function/jobstreet.R")
+source("./function/linkedin.R")
+
 
 bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
 chat_id <- 1415309056
