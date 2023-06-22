@@ -12,6 +12,7 @@ library(genTS)
 library(glue)
 library(telegram.bot)
 library(strex)
+source("./function/jobstreet.R")
 
 jobstreet_keyword <- c("geologi", "geology", "mining", "mine", "tambang",
                        "surveyor", "gis", "migas", "oil and gas", "foreman",
@@ -24,7 +25,7 @@ jobstreet_filtered <- jobstreet_raw %>%
   distinct(job_title, company, job_id, .keep_all = T)
 
 
-jobstreet_enriched <- jobstreet_filtered %>% group_nest(row_number()) %>% 
+jobstreet_enriched <- jobstreet_filtered[1:5, ] %>% group_nest(row_number()) %>% 
   pull(data) %>% map_dfr(enrich_jobstreet)
 
 jobstreet_enriched <- jobstreet_enriched %>% mutate(get_time = Sys.time())
@@ -70,9 +71,9 @@ df <-  jobstreet_filtered %>% filter(job_id == "4380139")
 tezz <- df %>% enrich_jobstreet()
 
 
+url
 
-
-
+url <- "https://www.jobstreet.co.id/id/job/4382256"
 
 url <- jobstreet_raw[sample(nrow(jobstreet_raw), 1),]$job_url
 page <- read_html(url)
@@ -102,7 +103,6 @@ description <- description_raw %>%
 if(length(description) > 1){
   description <- str_flatten(description)
 }
-
 
 
 additional_info_raw <- desc_info_raw %>% 

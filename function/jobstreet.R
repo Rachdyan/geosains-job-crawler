@@ -354,6 +354,7 @@ enrich_jobstreet <- function(df){
     industries <- tryCatch({company_info_raw[which(company_info_raw == "Industri") + 1]}, 
                            error = function(e) NA)
     
+    industries <- ifelse(genTS::is_empty(industries), NA, industries)
     
     get_time <- Sys.time()
     
@@ -368,9 +369,9 @@ enrich_jobstreet <- function(df){
   
 }
 
-keywords <- c("geologi", "geology", "mining", "mine", "tambang",
-                       "surveyor", "gis", "migas", "oil and gas", "foreman",
-                       "safety", "hse", "superintendent")
+# keywords <- c("geologi", "geology", "mining", "mine", "tambang",
+#                        "surveyor", "gis", "migas", "oil and gas", "foreman",
+#                        "safety", "hse", "superintendent")
 
 scrape_send_jobstreet <- function(keywords, bot_token, chat_id){
   jobstreet_raw <- map_dfr(keywords, jobstreet)
@@ -395,7 +396,7 @@ scrape_send_jobstreet <- function(keywords, bot_token, chat_id){
       map_dfr(enrich_jobstreet)  %>% 
       mutate(job_salary = ifelse(!is.na(salary_currency), glue("{salary_currency}{salary_min %>% as.numeric() %>% formatC(format='d', big.mark=',')} - {salary_currency}{salary_max %>% as.numeric() %>% formatC(format='d', big.mark=',')}"), NA)) %>%
       mutate(city = glue("{city}, {country}")) %>%
-      rename(job_company = company, job_location = city, industries, job_list_date = posted_at) %>%
+      rename(job_company = company, job_location = city, job_list_date = posted_at) %>%
       mutate(applicant = NA) %>%
       select(source, job_id, job_url, job_title, job_company, job_location, job_salary, job_list_date, seniority_level, 
              employment_type, industries, job_description, applicant, get_time)

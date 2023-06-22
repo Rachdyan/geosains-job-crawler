@@ -4,6 +4,11 @@ send_message <- function(df, bot_token, chat_id){
   
   description <- df$job_description
   newline_count <- str_count(description, "\n")
+  
+  if(is.na(description)){
+    description <- ""
+  }
+  
   if(nchar(description) > 300 && newline_count > 60){
     description <- substr(description, 1, 300) %>% 
       str_trim("right") %>% 
