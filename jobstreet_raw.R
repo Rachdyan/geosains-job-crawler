@@ -74,7 +74,7 @@ tezz <- df %>% enrich_jobstreet()
 
 
 
-url <- mining_job[sample(nrow(mining_job), 1),]$job_url
+url <- jobstreet_raw[sample(nrow(jobstreet_raw), 1),]$job_url
 page <- read_html(url)
 
 desc_info_raw <- page %>% html_element("div[id *= 'contentContainer'] > div > div > div:nth-child(2) > div > div > div")
@@ -115,8 +115,15 @@ additional_info_raw <- desc_info_raw %>%
 
 additional_info_raw2 <- additional_info_raw %>% html_text2()
 
-seniority_level <- additional_info_raw2[which(additional_info_raw2 == "Pengalaman Kerja") + 1]
+seniority_level <- additional_info_raw2[which(additional_info_raw2 == "Tingkat Pekerjaan") + 1]
+experience_level <- additional_info_raw2[which(additional_info_raw2 == "Pengalaman Kerja") + 1]
 
 
 
 
+company_info_raw <- page %>% 
+  html_element("div[id *= 'contentContainer'] > div > div > div:nth-child(2) > div > div:nth-child(2) > div > div:nth-child(2)") %>%
+  html_elements("span") %>% 
+  html_text2()
+
+industries <- company_info_raw[which(company_info_raw == "Industri") + 1]

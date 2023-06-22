@@ -340,20 +340,30 @@ enrich_jobstreet <- function(df){
         html_text2()}, 
         error = function(e) NA)
     
-    seniority_level <- tryCatch({additional_info_raw[which(additional_info_raw == "Pengalaman Kerja") + 1]}, 
+    seniority_level <- tryCatch({additional_info_raw[which(additional_info_raw == "Tingkat Pekerjaan") + 1]}, 
                                 error = function(e) NA)
     
     seniority_level <- ifelse(genTS::is_empty(seniority_level), NA, seniority_level)
     
+    company_info_raw <- tryCatch({page %>% 
+      html_element("div[id *= 'contentContainer'] > div > div > div:nth-child(2) > div > div:nth-child(2) > div > div:nth-child(2)") %>%
+      html_elements("span") %>% 
+      html_text2()}, 
+      error = function(e) NA)
+    
+    industries <- tryCatch({company_info_raw[which(company_info_raw == "Industri") + 1]}, 
+                           error = function(e) NA)
+    
+    
     get_time <- Sys.time()
     
-    result_df <- tryCatch({cbind(df, job_description, seniority_level, get_time)},
-                          error = function(e) cbind(df, job_description = NA, seniority_level = NA, get_time))
+    result_df <- tryCatch({cbind(df, job_description, seniority_level, industries, get_time)},
+                          error = function(e) cbind(df, job_description = NA, seniority_level = NA, industries = NA, get_time))
     
   }  else{
     error_message <- read_page$error %>% as.character()
     
-    result_df <- cbind(df, job_description = error_message, seniority_level = error_message, get_time =  Sys.time())
+    result_df <- cbind(df, job_description = error_message, seniority_level = error_message, industries = NA, get_time =  Sys.time())
   }
   
 }
@@ -372,7 +382,7 @@ scrape_send_jobstreet <- function(keywords, bot_token, chat_id){
   job_scraped <- read_csv("./data/job_scraped.csv", col_types = "ccccccc")
   
   new_jobs <- jobstreet_filtered %>% 
-    anti_join(job_scraped, by = join_by("source","job_id", "job_title",))
+    anti_join(job_scraped, by = join_by("source","job_id", "job_title"))
   
   if(nrow(new_jobs) == 0){
     glue("No new jobs from {url}") %>% message()
@@ -385,7 +395,7 @@ scrape_send_jobstreet <- function(keywords, bot_token, chat_id){
       map_dfr(enrich_jobstreet)  %>% 
       mutate(job_salary = ifelse(!is.na(salary_currency), glue("{salary_currency}{salary_min %>% as.numeric() %>% formatC(format='d', big.mark=',')} - {salary_currency}{salary_max %>% as.numeric() %>% formatC(format='d', big.mark=',')}"), NA)) %>%
       mutate(city = glue("{city}, {country}")) %>%
-      rename(job_company = company, job_location = city, industries = category, job_list_date = posted_at) %>%
+      rename(job_company = company, job_location = city, industries, job_list_date = posted_at) %>%
       mutate(applicant = NA) %>%
       select(source, job_id, job_url, job_title, job_company, job_location, job_salary, job_list_date, seniority_level, 
              employment_type, industries, job_description, applicant, get_time)
