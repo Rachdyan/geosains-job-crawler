@@ -398,6 +398,7 @@ scrape_send_jobstreet <- function(keywords, bot_token, chat_id){
       mutate(city = glue("{city}, {country}")) %>%
       rename(job_company = company, job_location = city, job_list_date = posted_at) %>%
       mutate(applicant = NA) %>%
+      filter(!str_detect(industries, "Hiburan|Seni|Produk Konsumen|Grosir|Asuransi|Makanan|Polymer|Automobil|Produk Konsumen|Tekstil|Retail")) %>%
       select(source, job_id, job_url, job_title, job_company, job_location, job_salary, job_list_date, seniority_level, 
              employment_type, industries, job_description, applicant, get_time)
   }

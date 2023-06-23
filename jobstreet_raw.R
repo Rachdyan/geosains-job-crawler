@@ -25,7 +25,7 @@ jobstreet_filtered <- jobstreet_raw %>%
   distinct(job_title, company, job_id, .keep_all = T)
 
 
-jobstreet_enriched <- jobstreet_filtered[1:5, ] %>% group_nest(row_number()) %>% 
+jobstreet_enriched <- jobstreet_filtered %>% group_nest(row_number()) %>% 
   pull(data) %>% map_dfr(enrich_jobstreet)
 
 jobstreet_enriched <- jobstreet_enriched %>% mutate(get_time = Sys.time())
@@ -33,11 +33,11 @@ jobstreet_enriched <- jobstreet_enriched %>% mutate(get_time = Sys.time())
 jobstreet_tidy <- jobstreet_enriched %>% 
   mutate(job_salary = ifelse(!is.na(salary_currency), glue("{salary_currency}{salary_min %>% as.numeric() %>% formatC(format='d', big.mark=',')} - {salary_currency}{salary_max %>% as.numeric() %>% formatC(format='d', big.mark=',')}"), NA)) %>%
   mutate(city = glue("{city}, {country}")) %>%
-  rename(job_company = company, job_location = city, industries = category, job_list_date = posted_at) %>%
-  mutate(applicant = NA) %>%
+  rename(job_company = company, job_location = city, job_list_date = posted_at) %>%
+  mutate(applicant = NA) %>% 
+  filter(!str_detect(industries, "Hiburan|Seni|Produk Konsumen|Grosir|Asuransi|Makanan|Polymer|Automobil|Produk Konsumen|Tekstil|Retail")) %>%
   select(source, job_id, job_url, job_title, job_company, job_location, job_salary, job_list_date, seniority_level, 
          employment_type, industries, job_description, applicant, get_time)
-
 
 write.table(jobstreet_tidy,
             file = "./data/job_scraped.csv", 
@@ -127,3 +127,7 @@ company_info_raw <- page %>%
   html_text2()
 
 industries <- company_info_raw[which(company_info_raw == "Industri") + 1]
+
+
+
+jobstreet2 <- job_scraped %>% filter(source == "Jobstreet")
