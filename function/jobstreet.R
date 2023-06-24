@@ -377,7 +377,7 @@ scrape_send_jobstreet <- function(keywords, bot_token, chat_id, future = F){
   if(future){
     jobstreet_raw <- future_map_dfr(keywords, jobstreet)
   } else{
-  jobstreet_raw <- map_dfr(keywords, jobstreet)
+    jobstreet_raw <- map_dfr(keywords, jobstreet)
   }
   
   jobstreet_filtered <- jobstreet_raw %>% 
@@ -390,7 +390,7 @@ scrape_send_jobstreet <- function(keywords, bot_token, chat_id, future = F){
     anti_join(job_scraped, by = join_by("source","job_id", "job_title"))
   
   if(nrow(new_jobs) == 0){
-    glue("No new jobs from {url}") %>% message()
+    glue("No new jobs from {keywords}") %>% message()
     return(NA)
   } else{
     glue("Total New Jobs: {nrow(new_jobs)}") %>% message()

@@ -19,7 +19,7 @@ source("./function/send_message.R")
 source("./function/jobstreet.R")
 source("./function/linkedin.R")
 
-plan(multisession, workers = 10)
+plan(multisession)
 
 bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
 chat_id <- 1415309056
