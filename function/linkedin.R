@@ -188,30 +188,33 @@ scrape_send_linkedin <- function(url, bot_token, chat_id, remote = F){
                    "oauth-arrow1336343rachdyan-9ed03", "oauth-arrowrq1336343rachdyan-f28a9", 
                    "oauth-arrowrqhl1336343rachdyan-ae7e3","oauth-naufalrachdyan-fd915", 
                    "oauth-arrow3493026chikabeladina-f200e", "rachdyanz",
-                   "oauth-cbeladina-d6a2d")
+                   "oauth-cbeladina-d6a2d", "oauth-rachdyannaufal8-a966e",
+                   "oauth-rachdyannaufal9-8c10e", "oauth-rachdyannaufal10-8140c")
     pass_list <- c("ad090add-449b-4da7-be9c-1dd56c1e752f", "a3c4b506-4529-4e5c-801d-bbb31e015f5c", 
                    "906eca4c-234f-4ce8-8c7a-26371a42105b", "38c1a776-e9a0-4e99-8098-36a6265a0286",
                    "95bfbe80-2f95-4d16-9235-f2da31b309ce", "766f55f3-d210-4a59-bd82-8c66fe8b2115", 
                    "7cf72936-bf04-4d63-b5d0-9925a96caa04", "2a843f22-78f1-4ca3-8a0e-d84b390a8b85",
                    "b51a6828-9abf-4924-aa13-a128a47b6bc5", "fe65069d-fc3a-4c21-9a2a-76a6431815f7",
                    "0eac964f-5397-4679-9943-1886d94e1d8b", "b63fbd3f-d17c-4e6b-ba7e-701bb9d025f3",
-                    "2472c5b6-122a-4a96-ab04-e8342d0c1521", "1521db3d-265d-47ed-b944-d4bc317b832b",
-                   "19eb35e5-a1cc-491b-b325-e98ce374869b")
+                   "2472c5b6-122a-4a96-ab04-e8342d0c1521", "1521db3d-265d-47ed-b944-d4bc317b832b",
+                   "19eb35e5-a1cc-491b-b325-e98ce374869b", "8db9ad0f-dfc9-4586-837f-16802c034a26",
+                   "9400a235-740d-4bf1-a8a9-98b23c6e9562", "47a49ee0-b981-4afe-bf60-481fa8de5d9a")
     
     n_random <- sample(length(user_list), 1)
     user <- user_list[n_random]
     pass <- pass_list[n_random]
     ip <- paste0(user, ':', pass, "@ondemand.saucelabs.com")
     
-    rD <- remoteDriver$new(
+    rD <- tryCatch({remoteDriver$new(
       remoteServerAddr = ip,
       port = 80,
       browserName = "chrome",
       version = "latest",
       platform = "Windows 11",
       extraCapabilities = extraCap
-    )
-      quiet(suppressMessages(rD$open()))
+    )}, error = function(e) NA)
+    
+      tryCatch({quiet(suppressMessages(rD$open()))}, error = function(e) NA)
     message("Success Opening the remote machine")
   } else {
     driver <- quiet(suppressMessages(
@@ -246,7 +249,7 @@ scrape_send_linkedin <- function(url, bot_token, chat_id, remote = F){
   job_scraped <- read_csv("./data/job_scraped.csv", col_types = "ccccccc")
   
   new_jobs <- all_jobs_info %>% 
-    anti_join(job_scraped, by = join_by("job_id", "job_title", "job_company"))
+    anti_join(job_scraped, by = join_by("source","job_id", "job_title", "job_company"))
   
   if(nrow(new_jobs) == 0){
     glue("No new jobs from {url}") %>% message()

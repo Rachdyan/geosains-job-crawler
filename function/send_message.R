@@ -34,19 +34,24 @@ send_message <- function(df, bot_token, chat_id){
   if(is.na(df$job_location) && is.na(df$seniority_level)){
     message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\n{description} \n{df$job_url}")
   } else if(is.na(df$seniority_level) || df$source == "Jobstreet"){
-    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_before_first(', Indonesia')}\n\n{description} \n{df$job_url}")
+    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_remove(', Indonesia')}\n\n{description} \n{df$job_url}")
   } else if(is.na(df$job_location)){
     message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLevel: {df$seniority_level} \n\n{description} \n{df$job_url}")
   } else {
-    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_before_first(', Indonesia')}\nLevel: {df$seniority_level} \n\n{description} \n{df$job_url}")
+    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_remove(', Indonesia')}\nLevel: {df$seniority_level} \n\n{description} \n{df$job_url}")
   }
   
-  message <- message %>% str_replace_all("(\n{2})\n+", "\n\n") 
+  message <- message %>%
+    str_replace_all("(\n{2})\n+", "\n\n") %>%
+    str_replace_all("\n\n\\s+\n\n", "\n\n") %>%
+    str_replace_all("\n{2,}\\s*\n", "\n\n")
   
   glue("Sending message for {df$job_title} - {df$job_url}") %>% message()
   tryCatch({bot$sendMessage(chat_id = 1415309056, text = message, parse_mode = "html")}, 
-           error = function(e) glue("Error sending message for {df$job_title} - {df$job_url}") %>% 
-             print())
+           error = function(e) {
+             glue("Error sending message for {df$job_title} - {df$job_url}") %>% print()
+             message(e)
+             })
   Sys.sleep(sample(3:6, 1))
   
   df_min <- df %>% select(source, job_url, job_title, job_company)
