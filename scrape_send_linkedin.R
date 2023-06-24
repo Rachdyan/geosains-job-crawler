@@ -20,7 +20,7 @@ source("./function/jobstreet.R")
 source("./function/linkedin.R")
 source("./function/indeed.R")
 
-plan(multisession)
+plan(multisession, workers = availableCores())
 
 bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
 chat_id <-  -1001748601116
