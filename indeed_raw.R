@@ -16,24 +16,25 @@ library(jsonlite)
 tez <- indeed("geologist")
 
 
-url <- "https://id.indeed.com/jobs?q=geology&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=geologi&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=geologist&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=mine&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=mining&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=oil+and+gas&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=migas&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=geodesi&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=tambang&sort=date&start=0"
-url <- 'https://id.indeed.com/jobs?q="gis"&sort=date&start=0'
+url <- "https://id.indeed.com/jobs?q=geology&sort=date"
+url <- "https://id.indeed.com/jobs?q=geologi&sort=date"
+url <- "https://id.indeed.com/jobs?q=geologist&sort=date"
+url <- "https://id.indeed.com/jobs?q=mine&sort=date"
+url <- "https://id.indeed.com/jobs?q=mining&sort=date"
+url <- "https://id.indeed.com/jobs?q=oil+and+gas&sort=date"
+url <- "https://id.indeed.com/jobs?q=migas&sort=date"
+url <- "https://id.indeed.com/jobs?q=geodesi&sort=date"
+url <- "https://id.indeed.com/jobs?q=tambang&sort=date"
+url <- 'https://id.indeed.com/jobs?q="gis"&sort=date'
 
-
+tez <- scrape_send_indeed(url, )
 
 
 url <- "https://id.indeed.com/jobs?q=gis&sort=date&start=0"
 
 
 url <- "https://id.indeed.com/?from=gnav-jobsearch--indeedmobile"
+
 
 
 extraCap <- list(
@@ -59,7 +60,8 @@ rD <- driver[["client"]]
 
 rD$navigate(url)
 
-
+##ERROR
+"https://id.indeed.com/viewjob?jk=aae337a59c02c355"
 
 
 
@@ -130,6 +132,8 @@ employment_type <- job_xml %>%
   html_elements("div[class *= 'Container'] > div") %>% 
   tail("1") %>% 
   html_text2()
+
+employment_type <- ifelse(str_detect(employment_type, "[0-9]"), NA, employment_type)
 
 posted_ago_raw <- job_xml %>% 
   html_element("table[class *= 'jobCardShelfContainer']") %>%

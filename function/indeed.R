@@ -62,6 +62,7 @@ get_indeed <- function(all_jobs_page){
       str_remove("\\+.+")},
       error = function(e) NA)
   employment_type <- ifelse(is_empty(employment_type), NA, employment_type)
+  employment_type <- ifelse(str_detect(employment_type, "[0-9]"), NA, employment_type)
   
   posted_ago_raw <- tryCatch({all_jobs_page %>% 
       html_element("table[class *= 'jobCardShelfContainer']") %>%
@@ -91,8 +92,6 @@ get_indeed <- function(all_jobs_page){
                                job_salary = NA, job_list_date = NA))
 }
 
-
-
 enrich_indeed <- function(job_info_df, rD){
   url <- job_info_df$job_url
   glue("Getting Job Details for {job_info_df$job_title} - {job_info_df$job_company}") %>% print()
@@ -118,8 +117,8 @@ enrich_indeed <- function(job_info_df, rD){
       str_squish() %>%
       str_replace_all("<p><br></p>", "\n\n") %>%
       str_replace_all("</ul>", "\n\n") %>%
-      str_replace_all("<h4.*?>|<h3.*?>", "<strong>") %>%
-      str_replace_all("</h4>|</h3>", "</strong>") %>%
+      str_replace_all("<(h[1-9]).*?>", "<strong>") %>%
+      str_replace_all("</(h[1-9])>", "</strong>") %>%
       str_remove_all("<div.*?>|<div>|</div>|<ul.*?>|<ul>|</li>|</p>|</ol>|</br>|<span.*?>|<span>|</span>") %>%
       str_replace_all("<p>|<ol>|<br>", "\n\n") %>%
       str_replace_all("<li>|<li.*?>", "\n • ") %>%
@@ -136,7 +135,7 @@ enrich_indeed <- function(job_info_df, rD){
   applicant <- NA
   get_time <- Sys.time()
   
-  job_list_date <- tryCatch({page %>% 
+  new_job_list_date <- tryCatch({page %>% 
       html_elements("script") %>%
       .[4] %>%
       html_text2() %>%
@@ -147,7 +146,16 @@ enrich_indeed <- function(job_info_df, rD){
       as.Date()}, 
       error = function(e) NA)
   
-  if(is_empty(job_list_date)) job_list_date <- df$job_list_date
+  if(is_empty(new_job_list_date)) new_job_list_date <- job_info_df$job_list_date
+  
+  ### INDUSTRIES
+  company_industry_indeed <- read.csv("./data/company_industry_indeed.csv")
+  company_industry_indeed <- company_industry_indeed %>% distinct()
+
+  
+  job_info_df <- job_info_df %>% 
+    left_join(company_industry_indeed) %>%
+    relocate(industries, .after = employment_type)
   
   if(is_empty(job_info_df$industries)){
     company_link <- page %>% 
@@ -160,18 +168,18 @@ enrich_indeed <- function(job_info_df, rD){
     page <- rD$getPageSource()[[1]] %>% 
       read_html()
     
-    industries <- tryCatch({page %>% 
+    new_industries <- tryCatch({page %>% 
         html_element("li[data-testid *= 'industry']") %>%
         html_elements("div") %>%
         tail(1) %>% 
         html_text2()}, 
         error = function(e) "Not Available")
     
-    if(is_empty(industries)) industries <- "Not Available"
+    if(is_empty(new_industries)) new_industries <- "Not Available"
     
-    new_company_industry <- cbind(job_info_df$job_company, industries)
+    new_company_industry <- cbind(job_info_df$job_company, new_industries)
     
-    glue("Writing new company industry for {job_info_df$job_company} - {industries}")
+    glue("Writing new company industry for {job_info_df$job_company} - {new_industries}") %>% message()
     
     write.table(new_company_industry,
                 file = "./data/company_industry_indeed.csv", 
@@ -179,14 +187,19 @@ enrich_indeed <- function(job_info_df, rD){
                 append = T,
                 row.names = F,
                 col.names = F)
+    
   } else{
-    industries <- job_info_df$industries
+    new_industries <- job_info_df$industries
   }
   
-  job_info_df <- job_info_df %>% mutate(job_list_date = job_list_date, industries = industries)
+  job_info_df <- job_info_df %>% mutate(job_list_date = new_job_list_date, industries = new_industries)
   
   result_df <- cbind(job_info_df, seniority_level, job_description, applicant, get_time) %>%
-    relocate(employment_type, .after = seniority_level)
+    relocate(employment_type, .after = seniority_level) %>%
+    select("source", "job_id", "job_url", "job_title", "job_company", 
+           "job_location", "job_salary", "job_list_date", "seniority_level", 
+           "employment_type", "industries", "job_description", "applicant", 
+           "get_time")
 }
 
 
@@ -262,27 +275,29 @@ scrape_send_indeed <- function(url, bot_token, chat_id, remote = F, all_pages = 
     pagination <- page %>% html_element("nav[aria-label *= 'pagination']") %>% html_elements("div")
     
     n_next_page <- length(pagination) - 2
-    next_page_links <- NULL
     
-    for(i in 1:n_next_page){
-      page_link <- glue("https://id.indeed.com/jobs?q=mine&start={i}0")
-      rD$navigate(page_link)
-      Sys.sleep(3)
-      page <- rD$getPageSource()[[1]] %>% 
-        read_html()
+    glue("There are total {n_next_page} next pages") %>% message()
+    
+    if(n_next_page <= 0){
+      all_jobs_info <- all_jobs_info
+    } else{
+      next_page_links <- NULL
       
-      jobs_raw <- page %>% html_elements("ul[class *= 'Results'] > li > div[class *= 'card']")
-      jobs_info <- map_dfr(jobs_raw, get_indeed)
-      
-      all_jobs_info <- rbind(all_jobs_info, jobs_info)
+      for(i in 1:n_next_page){
+        page_link <- glue("{url}&start={i}0")
+        glue("Getting Jobs Info from {page_link}") %>% message()
+        rD$navigate(page_link)
+        Sys.sleep(3)
+        page <- rD$getPageSource()[[1]] %>% 
+          read_html()
+        
+        jobs_raw <- page %>% html_elements("ul[class *= 'Results'] > li > div[class *= 'card']")
+        jobs_info <- map_dfr(jobs_raw, get_indeed)
+        
+        all_jobs_info <- rbind(all_jobs_info, jobs_info)
+      }
     }
   }
-  
-  company_industry_indeed <- read.csv("./data/company_industry_indeed.csv")
-  
-  all_jobs_info <- all_jobs_info %>% 
-    left_join(company_industry_indeed) %>%
-    relocate(industries, .after = employment_type)
   
   job_scraped <- read_csv("./data/job_scraped.csv", col_types = "ccccccc")
   
@@ -311,10 +326,13 @@ scrape_send_indeed <- function(url, bot_token, chat_id, remote = F, all_pages = 
   
   rD$close()
   
+  message("Sending Message..")
   posted_df <- new_jobs_detail %>%
-    group_nest(row_number()) %>% 
-    pull(data) %>%
-    map_dfr(send_message, bot_token = bot_token, chat_id = chat_id)
+      filter(!str_detect(job_title, "Developer|Guru|Data Analyst|Data Engineer") %>% replace_na(TRUE)) %>%
+      group_nest(row_number()) %>% 
+      pull(data) %>%
+      map_dfr(possibly(send_message, otherwise = tibble(source = "indeed", job_url = "error", job_title = "error", job_company = "error", posted_at = Sys.time() + years(50))), 
+              bot_token = bot_token, chat_id = chat_id)
   
   message("Appending posted job info to the existing csv..")
   write.table(posted_df,
@@ -326,5 +344,4 @@ scrape_send_indeed <- function(url, bot_token, chat_id, remote = F, all_pages = 
   
   message("Done!")
 }
-
 

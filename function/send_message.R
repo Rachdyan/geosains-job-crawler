@@ -14,7 +14,8 @@ send_message <- function(df, bot_token, chat_id){
       str_trim("right") %>% 
       str_remove("<[^>]*$") %>%
       str_trim("right") %>% 
-      str_remove("<[^>]+>$") %>%
+      str_remove("<[^/][^>]*>$") %>%
+      # str_remove("<[^>]+>$") %>%
       str_remove_all("<[^/][^>]*>[^<]*$") %>%
       str_remove_all("<[^/][^>]*>[^<]*$")
     description <- glue("{description}...\n\nRead more on website:")
@@ -23,7 +24,8 @@ send_message <- function(df, bot_token, chat_id){
       str_trim("right") %>% 
       str_remove("<[^>]*$") %>%
       str_trim("right") %>% 
-      str_remove("<[^>]+>$") %>%
+      str_remove("<[^/][^>]*>$") %>%
+      # str_remove("<[^>]+>$") %>% old
       str_remove_all("<[^/][^>]*>[^<]*$") %>%
       str_remove_all("<[^/][^>]*>[^<]*$")
     description <- glue("{description}...\n\nRead more on website:")
@@ -47,13 +49,25 @@ send_message <- function(df, bot_token, chat_id){
     str_replace_all("\n{2,}\\s*\n", "\n\n")
   
   glue("Sending message for {df$job_title} - {df$job_url}") %>% message()
-  tryCatch({bot$sendMessage(chat_id = 1415309056, text = message, parse_mode = "html")}, 
+  
+  send <- tryCatch({bot$sendMessage(chat_id = 1415309056, text = message, parse_mode = "html")}, 
            error = function(e) {
-             glue("Error sending message for {df$job_title} - {df$job_url}") %>% print()
+             glue("Error sending message for {df$job_title} - {df$job_url}\n") %>% print()
              message(e)
+             return(NA)
              })
-  Sys.sleep(sample(3:6, 1))
+  
+  send_status <- tryCatch({send$message_id}, error = function(e) NA)
+  
+  Sys.sleep(sample(2:4, 1))
   
   df_min <- df %>% select(source, job_url, job_title, job_company)
-  log <- cbind(df_min, posted_at = Sys.time())
+  
+  if(is_empty(send_status)){
+    log <- cbind(df_min, posted_at = Sys.time() + years(50))
+  } else{
+    log <- cbind(df_min, posted_at = Sys.time())
+  }
 }
+
+
