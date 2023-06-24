@@ -23,7 +23,8 @@ source("./function/indeed.R")
 plan(multisession)
 
 bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
-chat_id <- 1415309056
+chat_id <-  -1001748601116
+# chat_id <- 1415309056
 
 message("Getting Jobs From Linkedin")
 
@@ -67,3 +68,4 @@ indeed_urls <- c("https://id.indeed.com/jobs?q=geology&sort=date",
                  'https://id.indeed.com/jobs?q="gis"&sort=date')
 
 future_map(indeed_urls, scrape_send_indeed, bot_token, chat_id, remote = T, all_pages = F)
+

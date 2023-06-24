@@ -50,7 +50,7 @@ send_message <- function(df, bot_token, chat_id){
   
   glue("Sending message for {df$job_title} - {df$job_url}") %>% message()
   
-  send <- tryCatch({bot$sendMessage(chat_id = 1415309056, text = message, parse_mode = "html")}, 
+  send <- tryCatch({bot$sendMessage(chat_id = chat_id, text = message, parse_mode = "html")}, 
            error = function(e) {
              glue("Error sending message for {df$job_title} - {df$job_url}\n") %>% print()
              message(e)

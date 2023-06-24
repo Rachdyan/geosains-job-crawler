@@ -276,7 +276,7 @@ scrape_send_linkedin <- function(url, bot_token, chat_id, remote = F){
   posted_df <- new_jobs_detail %>%
     group_nest(row_number()) %>% 
     pull(data) %>%
-    map_dfr(possibly(send_message, otherwise = tibble(source = "indeed", job_url = "error", job_title = "error", job_company = "error", posted_at = Sys.time() + years(50))), 
+    map_dfr(possibly(send_message, otherwise = tibble(source = "linkedin", job_url = "error", job_title = "error", job_company = "error", posted_at = Sys.time() + years(50))), 
             bot_token = bot_token, chat_id = chat_id)
   
   message("Appending posted job info to the existing csv..")
