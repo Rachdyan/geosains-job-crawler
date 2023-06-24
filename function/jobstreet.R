@@ -390,7 +390,7 @@ scrape_send_jobstreet <- function(keywords, bot_token, chat_id, future = F){
     anti_join(job_scraped, by = join_by("source","job_id", "job_title"))
   
   if(nrow(new_jobs) == 0){
-    glue("No new jobs from {keywords}") %>% message()
+    glue("No new jobs from {keywords}\n") %>% message()
     return(NA)
   } else{
     glue("Total New Jobs: {nrow(new_jobs)}") %>% message()
