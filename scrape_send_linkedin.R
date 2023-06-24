@@ -14,6 +14,7 @@ library(httr)
 library(telegram.bot)
 library(janitor)
 library(tidyr)
+library(furrr)
 source("./function/send_message.R")
 source("./function/jobstreet.R")
 source("./function/linkedin.R")
@@ -39,8 +40,8 @@ urls <- c(
 )
 
 
-map(urls, scrape_send_linkedin, bot_token, chat_id, remote = T)
-
+# map(urls, scrape_send_linkedin, bot_token, chat_id, remote = T)
+future_map(urls, scrape_send_linkedin, bot_token, chat_id, remote = T)
 
 message("Getting Jobs From Jobstreet")
 
@@ -48,5 +49,4 @@ keywords <- c("geologi", "geology", "mining", "mine", "tambang",
               "surveyor", "gis", "migas", "oil and gas", "foreman",
               "safety", "hse", "superintendent")
 
-
-scrape_send_jobstreet(keywords, bot_token, chat_id)
+scrape_send_jobstreet(keywords, bot_token, chat_id, future = T)

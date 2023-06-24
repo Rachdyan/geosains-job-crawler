@@ -373,8 +373,12 @@ enrich_jobstreet <- function(df){
 #                        "surveyor", "gis", "migas", "oil and gas", "foreman",
 #                        "safety", "hse", "superintendent")
 
-scrape_send_jobstreet <- function(keywords, bot_token, chat_id){
+scrape_send_jobstreet <- function(keywords, bot_token, chat_id, future = F){
+  if(future){
+    jobstreet_raw <- future_map_dfr(keywords, jobstreet)
+  } else{
   jobstreet_raw <- map_dfr(keywords, jobstreet)
+  }
   
   jobstreet_filtered <- jobstreet_raw %>% 
     filter(!str_detect(company, "Asuransi") & !str_detect(category, "Perbankan|Manufaktur")) %>%
