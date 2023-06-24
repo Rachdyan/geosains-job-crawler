@@ -51,6 +51,7 @@ send_message <- function(df, bot_token, chat_id){
            error = function(e) {
              glue("Error sending message for {df$job_title} - {df$job_url}") %>% print()
              message(e)
+             NA
              })
   Sys.sleep(sample(3:6, 1))
   

@@ -1,4 +1,4 @@
-source("./function/linkedin.R")
+
 library(RSelenium)
 library(dplyr)
 library(rvest)
@@ -12,22 +12,29 @@ library(readr)
 library(telegram.bot)
 library(lubridate)
 library(jsonlite)
+source("./function/linkedin.R")
+source("./function/indeed.R")
+source("./function/send_message.R")
 
 tez <- indeed("geologist")
 
 
-url <- "https://id.indeed.com/jobs?q=geology&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=geologi&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=geologist&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=mine&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=mining&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=oil+and+gas&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=migas&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=geodesi&sort=date&start=0"
-url <- "https://id.indeed.com/jobs?q=tambang&sort=date&start=0"
-url <- 'https://id.indeed.com/jobs?q="gis"&sort=date&start=0'
+url <- "https://id.indeed.com/jobs?q=geology&sort=date"
+url <- "https://id.indeed.com/jobs?q=geologi&sort=date"
+url <- "https://id.indeed.com/jobs?q=geologist&sort=date"
+url <- "https://id.indeed.com/jobs?q=mine&sort=date"
+url <- "https://id.indeed.com/jobs?q=mining&sort=date"
+url <- "https://id.indeed.com/jobs?q=oil+and+gas&sort=date"
+url <- "https://id.indeed.com/jobs?q=migas&sort=date"
+url <- "https://id.indeed.com/jobs?q=geodesi&sort=date"
+url <- "https://id.indeed.com/jobs?q=tambang&sort=date"
+url <- 'https://id.indeed.com/jobs?q="gis"&sort=date'
 
 
+bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
+chat_id <- 1415309056
+
+scrape_send_indeed(url, bot_token, chat_id, remote = F, all_pages = T)
 
 
 url <- "https://id.indeed.com/jobs?q=gis&sort=date&start=0"
@@ -61,8 +68,6 @@ rD$navigate(url)
 
 
 
-
-
 ## GET PAGE
 page <- rD$getPageSource()[[1]] %>% 
   read_html()
@@ -91,7 +96,12 @@ if(all_page = T){
 }
 
 
-## COBA FILL INDUSTRY
+## COBA FILL INDUSTRY,
+company_industry_indeed <- company_industry_indeed %>% distinct()
+
+write.csv(company_industry_indeed, "./data/company_industry_indeed.csv", row.names = F)
+company_industry_indeed <- read.csv("./data/company_industry_indeed.csv")
+
 company_industry_indeed <- read.csv("./data/company_industry_indeed.csv")
 
 all_jobs_info <- all_jobs_info %>% 
@@ -581,3 +591,12 @@ indeed <- function(key, limit = 30L) {
   return(vacancy)
   
 }
+
+
+write.table(all_job_details,
+            file = "./data/job_scraped.csv", 
+            sep = ",",
+            append = T,
+            row.names = F,
+            col.names = F)
+

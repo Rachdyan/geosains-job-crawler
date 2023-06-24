@@ -118,8 +118,8 @@ enrich_indeed <- function(job_info_df, rD){
       str_squish() %>%
       str_replace_all("<p><br></p>", "\n\n") %>%
       str_replace_all("</ul>", "\n\n") %>%
-      str_replace_all("<h4.*?>|<h3.*?>", "<strong>") %>%
-      str_replace_all("</h4>|</h3>", "</strong>") %>%
+      str_replace_all("<(h[2-9]).*?>", "<strong>") %>%
+      str_replace_all("</(h[2-9])>", "</strong>") %>%
       str_remove_all("<div.*?>|<div>|</div>|<ul.*?>|<ul>|</li>|</p>|</ol>|</br>|<span.*?>|<span>|</span>") %>%
       str_replace_all("<p>|<ol>|<br>", "\n\n") %>%
       str_replace_all("<li>|<li.*?>", "\n • ") %>%
@@ -149,6 +149,13 @@ enrich_indeed <- function(job_info_df, rD){
   
   if(is_empty(job_list_date)) job_list_date <- df$job_list_date
   
+  ### INDUSTRIES
+  company_industry_indeed <- read.csv("./data/company_industry_indeed.csv")
+  
+  job_info_df <- job_info_df %>% 
+    left_join(company_industry_indeed) %>%
+    relocate(industries, .after = employment_type)
+  
   if(is_empty(job_info_df$industries)){
     company_link <- page %>% 
       html_element("div[data-company-name *= 'true'] > a") %>%
@@ -171,7 +178,7 @@ enrich_indeed <- function(job_info_df, rD){
     
     new_company_industry <- cbind(job_info_df$job_company, industries)
     
-    glue("Writing new company industry for {job_info_df$job_company} - {industries}")
+    glue("Writing new company industry for {job_info_df$job_company} - {industries}") %>% message()
     
     write.table(new_company_industry,
                 file = "./data/company_industry_indeed.csv", 
@@ -262,27 +269,29 @@ scrape_send_indeed <- function(url, bot_token, chat_id, remote = F, all_pages = 
     pagination <- page %>% html_element("nav[aria-label *= 'pagination']") %>% html_elements("div")
     
     n_next_page <- length(pagination) - 2
-    next_page_links <- NULL
     
-    for(i in 1:n_next_page){
-      page_link <- glue("https://id.indeed.com/jobs?q=mine&start={i}0")
-      rD$navigate(page_link)
-      Sys.sleep(3)
-      page <- rD$getPageSource()[[1]] %>% 
-        read_html()
+    glue("There are total {n_next_page} pages") %>% message()
+    
+    if(n_next_page <= 0){
+      all_jobs_info <- all_jobs_info
+    } else{
+      next_page_links <- NULL
       
-      jobs_raw <- page %>% html_elements("ul[class *= 'Results'] > li > div[class *= 'card']")
-      jobs_info <- map_dfr(jobs_raw, get_indeed)
-      
-      all_jobs_info <- rbind(all_jobs_info, jobs_info)
+      for(i in 1:n_next_page){
+        page_link <- glue("{url}&start={i}0")
+        glue("Getting Jobs Info from {page_link}") %>% message()
+        rD$navigate(page_link)
+        Sys.sleep(3)
+        page <- rD$getPageSource()[[1]] %>% 
+          read_html()
+        
+        jobs_raw <- page %>% html_elements("ul[class *= 'Results'] > li > div[class *= 'card']")
+        jobs_info <- map_dfr(jobs_raw, get_indeed)
+        
+        all_jobs_info <- rbind(all_jobs_info, jobs_info)
+      }
     }
   }
-  
-  company_industry_indeed <- read.csv("./data/company_industry_indeed.csv")
-  
-  all_jobs_info <- all_jobs_info %>% 
-    left_join(company_industry_indeed) %>%
-    relocate(industries, .after = employment_type)
   
   job_scraped <- read_csv("./data/job_scraped.csv", col_types = "ccccccc")
   
