@@ -130,4 +130,10 @@ industries <- company_info_raw[which(company_info_raw == "Industri") + 1]
 
 
 
-jobstreet2 <- job_scraped %>% filter(source == "Jobstreet")
+linkedin <- job_scraped %>% filter(source == "linkedin")
+
+job_scraped_new <- rbind(linkedin, jobstreet_tidy)
+
+write.csv(job_scraped_new, "./data/job_scraped.csv", row.names = F, col.names = T)
+
+
