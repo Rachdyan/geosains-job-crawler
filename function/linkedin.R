@@ -280,7 +280,7 @@ scrape_send_linkedin <- function(url, bot_token, chat_id, remote = F){
             bot_token = bot_token, chat_id = chat_id)
   
   message("Appending posted job info to the existing csv..")
-  write.table(poosted_df,
+  write.table(posted_df,
               file = "./data/job_posted.csv", 
               sep = ",",
               append = T,
