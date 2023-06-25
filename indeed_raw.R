@@ -585,3 +585,4 @@ indeed <- function(key, limit = 30L) {
   return(vacancy)
   
 }
+

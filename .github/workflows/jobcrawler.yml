@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GHPAT }}
+      BOT_TOKEN: ${{ secrets.TELEBOT_TOKEN }}
+      SL_PASS: ${{ secrets.SL_PASS }}
       
     steps:
       - name: Checkout
