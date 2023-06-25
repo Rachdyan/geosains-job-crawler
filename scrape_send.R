@@ -22,8 +22,7 @@ source("./function/indeed.R")
 
 plan(multisession)
 
-bot_token <- Sys.getenv("TELEBOT_TOKEN")
-# bot_token <- "6224206664:AAGngscLsRooxT4bUFyx4VjAuSKlL2_3fFI"
+bot_token <- Sys.getenv("BOT_TOKEN")
 chat_id <-  -1001748601116
 # chat_id <- 1415309056
 
