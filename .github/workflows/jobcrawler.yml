@@ -27,7 +27,7 @@ jobs:
       
       - name: Run crawler and forwarder script
         run: | 
-          Rscript scrape_send_linkedin.R
+          Rscript scrape_send.R
         
       - name: Set today
         id: set_today

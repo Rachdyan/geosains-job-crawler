@@ -5,3 +5,7 @@
 .DS_Store
 secrets.R
 belajarbot.R
+jobstreet_raw.R
+linkedin_raw.R
+indeed_raw.R
+.raw_code
