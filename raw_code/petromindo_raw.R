@@ -74,7 +74,7 @@ user_agent_list <- c("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.
                      "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0",
                      "Mozilla/5.0 (X11; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/107.0")
 
-url <- 'https://www.petromindo.com/job-gallery/category/mining?page=1'
+url <- 'https://www.petromindo.com/job-gallery/category/mining'
 url <- "https://www.petromindo.com/job-gallery/category/oil-gas"
 
 
@@ -91,11 +91,28 @@ industries <- page %>%
   html_text2()
 all_jobs_info <- map_dfr(all_jobs, get_petromindo, industries)
 
+all_jobs_details <- all_jobs_info %>% 
+  group_nest(row_number()) %>% 
+  pull(data) %>%
+  map_dfr(enrich_petromindo) 
+
+
 
 
 url <- all_jobs_info[sample(nrow(all_jobs_info), 1), ]$job_url
 
 job_info_df <- all_jobs_info[sample(nrow(all_jobs_info), 1), ]
+
+tezz <- job_info_df %>% enrich_petromindo()
+
+
+
+
+
+
+
+
+
 
 enrich_petromindo <- function(job_info_df){
   url <- job_info_df$job_url
@@ -204,10 +221,6 @@ enrich_petromindo <- function(job_info_df){
              "get_time")
     
   }
-  
-  
-  
-  
 }
 
 
