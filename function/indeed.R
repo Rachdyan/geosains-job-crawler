@@ -88,7 +88,7 @@ get_indeed <- function(all_jobs_page){
   
   job_info_df <- tryCatch({
     tibble(source = source, job_id, job_url, job_title, job_company, job_location, job_salary, employment_type,  job_list_date)}, 
-    error = function(e) tibble(job_id = "Error", job_url = "Error", job_title = NA, job_company = NA, job_location = NA, 
+    error = function(e) tibble(source = source, job_id = "Error", job_url = "Error", job_title = NA, job_company = NA, job_location = NA, 
                                job_salary = NA, job_list_date = NA))
 }
 
@@ -320,7 +320,7 @@ scrape_send_indeed <- function(url, bot_token, chat_id, remote = F, all_pages = 
   
   message("Sending Message..")
   posted_df <- new_jobs_detail %>%
-      filter(!str_detect(job_title, "Developer|Guru|Data Analyst|Data Engineer") %>% replace_na(TRUE)) %>%
+      filter(!str_detect(job_title, "Developer|Guru|Data Analyst|Data Engineer|E-Commerce") %>% replace_na(TRUE)) %>%
       group_nest(row_number()) %>% 
       pull(data) %>%
       map_dfr(possibly(send_message, otherwise = tibble(source = "indeed", job_url = "error", job_title = "error", job_company = "error", posted_at = Sys.time() + years(50))), 
