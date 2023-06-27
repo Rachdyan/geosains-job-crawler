@@ -19,6 +19,7 @@ source("./function/send_message.R")
 source("./function/jobstreet.R")
 source("./function/linkedin.R")
 source("./function/indeed.R")
+source("./function/petromindo.R")
 
 plan(multisession)
 
@@ -69,3 +70,9 @@ indeed_urls <- c("https://id.indeed.com/jobs?q=geology&sort=date",
 
 future_map(indeed_urls, scrape_send_indeed, bot_token, chat_id, remote = T, all_pages = F)
 
+message("Getting Jobs From Petromindo")
+
+petromindo_urls <- c('https://www.petromindo.com/job-gallery/category/mining',
+                     "https://www.petromindo.com/job-gallery/category/oil-gas")
+
+future_map(petromindo_urls, scrape_send_petromindo, bot_token, chat_id)
