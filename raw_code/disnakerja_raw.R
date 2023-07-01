@@ -293,20 +293,6 @@ enrich_disnakerja <- function(job_info_df){
   
 }
 
-tezz <- 
-
-# 
-# if(nchar(job_description) > 500 ){
-#   job_description <- substr(job_description, 1, 500)
-# }
-# 
-# 
-bot_token <- "6224206664:AAEJuMYHxmqwl9dIda6cst3K_vpr_Xo2GAE"
-chat_id <- 1415309056
-#
-bot <- Bot(token = bot_token)
-bot$sendMessage(chat_id = 1415309056, text = job_description, parse_mode = "html")
-
 
 get_disnakerja <- function(all_jobs_page, industries){
   
