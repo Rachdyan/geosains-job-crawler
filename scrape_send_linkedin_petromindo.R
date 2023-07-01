@@ -16,9 +16,7 @@ library(janitor)
 library(tidyr)
 library(furrr)
 source("./function/send_message.R")
-source("./function/jobstreet.R")
 source("./function/linkedin.R")
-source("./function/indeed.R")
 source("./function/petromindo.R")
 
 plan(multisession)
@@ -45,6 +43,8 @@ urls <- c(
 
 # map(urls, scrape_send_linkedin, bot_token, chat_id, remote = T)
 future_map(urls, scrape_send_linkedin, bot_token, chat_id, remote = T)
+
+
 
 message("Getting Jobs From Petromindo")
 

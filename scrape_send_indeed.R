@@ -16,10 +16,7 @@ library(janitor)
 library(tidyr)
 library(furrr)
 source("./function/send_message.R")
-source("./function/jobstreet.R")
-source("./function/linkedin.R")
 source("./function/indeed.R")
-source("./function/petromindo.R")
 
 plan(multisession)
 

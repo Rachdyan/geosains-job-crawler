@@ -9,7 +9,7 @@ send_message <- function(df, bot_token, chat_id){
     description <- ""
   }
   
-  if(nchar(description) > 300 && newline_count > 60 && df$source ){
+  if(nchar(description) > 300 && newline_count > 60 && df$source != "petromindo"){
     description <- substr(description, 1, 300) %>% 
       str_trim("right") %>% 
       str_remove("<[^>]*$") %>%
@@ -33,7 +33,9 @@ send_message <- function(df, bot_token, chat_id){
     description <- glue("{description}\n\n")
   }
   
-  if(is.na(df$job_location) && is.na(df$seniority_level)){
+  if(df$source == "disnakerja"){
+    message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_remove(', Indonesia')}\n\n{description} \n{df$job_url}")
+  } else if(is.na(df$job_location) && is.na(df$seniority_level)){
     message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\n{description} \n{df$job_url}")
   } else if(is.na(df$seniority_level) || df$source == "Jobstreet"){
     message <- glue("<strong>{df$job_title %>% str_to_upper()}</strong>\n<em>{df$job_company}</em>\n\nLocation: {df$job_location %>% str_remove(', Indonesia')}\n\n{description} \n{df$job_url}")
