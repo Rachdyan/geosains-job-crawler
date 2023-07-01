@@ -97,16 +97,84 @@ all_jobs_details <- all_jobs_info %>%
   map_dfr(enrich_petromindo) 
 
 
+job_scraped <- rbind(job_scraped, all_jobs_details)
+
+write.csv(job_scraped,
+            file = "./data/job_scraped.csv", 
+            row.names = F,
+            col.names = T)
 
 
-url <- all_jobs_info[sample(nrow(all_jobs_info), 1), ]$job_url
+# url <- all_jobs_info[sample(nrow(all_jobs_info), 1), ]$job_url
+# 
+# job_info_df <- all_jobs_info[sample(nrow(all_jobs_info), 1), ]
+# 
+# tezz <- job_info_df %>% enrich_petromindo()
+# 
 
-job_info_df <- all_jobs_info[sample(nrow(all_jobs_info), 1), ]
 
-tezz <- job_info_df %>% enrich_petromindo()
-
-
-
+scrape_send_petromindo <- function(url, bot_token, chat_id){
+  
+  read_page <- GET(url, add_headers('user-agent' = sample(user_agent_list, 1)))  %>%
+    safe_read_html()
+  page <- read_page$result
+  
+  all_jobs <- page %>% html_elements("article")
+  industries <- page %>% 
+    html_elements("main > section > div > div[class *= 'row'] > div > div > div > div > div > div") %>%
+    .[2] %>%
+    html_element("strong") %>%
+    html_text2()
+  
+  all_jobs_info <- map_dfr(all_jobs, get_petromindo, industries)
+  
+  job_scraped <- read_csv("./data/job_scraped.csv", col_types = "ccccccc")
+  
+  new_jobs <- all_jobs_info %>% 
+    anti_join(job_scraped, by = join_by("source","job_id", "job_title", "job_company"))
+  
+  if(nrow(new_jobs) == 0){
+    glue("No new jobs from {url} \n") %>% message()
+    return(NA)
+  } else{
+    glue("Total New Jobs: {nrow(new_jobs)}") %>% message()
+    new_jobs_detail <-  new_jobs %>% 
+      group_nest(row_number()) %>% 
+      pull(data) %>%
+      map_dfr(enrich_petromindo) %>%
+      select(source, job_id, job_url, job_title, job_company, job_location, job_salary, job_list_date, seniority_level, 
+             employment_type, industries, job_description, applicant, get_time)
+  }
+  
+  message("Appending new jobs into the existing csv..")
+  write.table(new_jobs_detail,
+              file = "./data/job_scraped.csv", 
+              sep = ",",
+              append = T,
+              row.names = F,
+              col.names = F)
+  
+  poosted_df <- new_jobs_detail %>%
+    group_nest(row_number()) %>% 
+    pull(data) %>%
+    map_dfr(send_message, bot_token = bot_token, chat_id = chat_id)
+  
+  message("Appending posted job info to the existing csv..")
+  write.table(poosted_df,
+              file = "./data/job_posted.csv", 
+              sep = ",",
+              append = T,
+              row.names = F,
+              col.names = F)
+  
+  message("Done!")
+  
+}
+  
+  
+  
+  
+}
 
 
 

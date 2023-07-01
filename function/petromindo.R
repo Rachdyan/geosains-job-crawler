@@ -93,7 +93,7 @@ get_petromindo <- function(all_jobs_page, industries){
   
   job_info_df <- tryCatch({
     tibble(source = source, job_id, job_url, job_title, job_company, industries = industries)}, 
-    error = function(e) tibble(job_id = "Error", job_url = "Error", job_title = NA, job_company = NA))
+    error = function(e) tibble(source = source, job_id = "Error", job_url = "Error", job_title = NA, job_company = NA, industries = industries))
 }
 
 

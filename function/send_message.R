@@ -9,7 +9,7 @@ send_message <- function(df, bot_token, chat_id){
     description <- ""
   }
   
-  if(nchar(description) > 300 && newline_count > 60){
+  if(nchar(description) > 300 && newline_count > 60 && df$source ){
     description <- substr(description, 1, 300) %>% 
       str_trim("right") %>% 
       str_remove("<[^>]*$") %>%
