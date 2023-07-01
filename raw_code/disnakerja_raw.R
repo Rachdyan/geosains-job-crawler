@@ -1,4 +1,17 @@
-
+library(unmplymnt)
+library(jsonlite)
+library(rvest)
+library(httr)
+library(janitor)
+library(tidyr)
+library(lubridate)
+library(purrr)
+library(dplyr)
+library(stringr)
+library(genTS)
+library(glue)
+library(telegram.bot)
+library(strex)
 
 
 safe_read_html <- safely(read_html, quiet = F)
@@ -82,7 +95,217 @@ industries <- page %>%
   html_text2()
 
 all_jobs_info <-  map_dfr(all_jobs_page, get_disnakerja, industries)
+
+all_jobs_details <- all_jobs_info %>% 
+  group_nest(row_number()) %>% 
+  pull(data) %>%
+  map_dfr(enrich_disnakerja) 
+
+url <- "https://www.disnakerja.com/industri/mining/"
+url <- "https://www.disnakerja.com/industri/migas/"
+
+bot_token <- "6224206664:AAEJuMYHxmqwl9dIda6cst3K_vpr_Xo2GAE"
+chat_id <- 1415309056
+
+tezz <- scrape_send_disnakerja(url, bot_token, chat_id)
+
+
+scrape_send_disnakerja <- function(url, bot_token, chat_id){
+  
+  read_page <- GET(url, add_headers('user-agent' = sample(user_agent_list, 1)))  %>%
+    safe_read_html()
+  page <- read_page$result
+  
+  all_jobs_page <- page %>% 
+    html_element("div[id *= 'site-container']") %>% 
+    html_element("div[id *= 'primary'] > div") %>%
+    html_element("main > div") %>%
+    html_elements("article")
+  
+  industries <- page %>% 
+    html_element("div[id *= 'site-container']") %>% 
+    html_element("div[id *= 'primary'] > div") %>%
+    html_element("h1 > span") %>%
+    html_text2()
+  
+  all_jobs_info <-  map_dfr(all_jobs_page, get_disnakerja, industries)
+  
+  job_scraped <- read_csv("./data/job_scraped.csv", col_types = "ccccccc")
+  
+  new_jobs <- all_jobs_info %>% 
+    anti_join(job_scraped, by = join_by("source","job_id", "job_company"))
+  
+  if(nrow(new_jobs) == 0){
+    glue("No new jobs from {url} \n") %>% message()
+    return(NA)
+  } else{
+    glue("Total New Jobs: {nrow(new_jobs)}") %>% message()
+    new_jobs_detail <-  new_jobs %>% 
+      group_nest(row_number()) %>% 
+      pull(data) %>%
+      map_dfr(enrich_disnakerja) %>%
+      select(source, job_id, job_url, job_title, job_company, job_location, job_salary, job_list_date, seniority_level, 
+             employment_type, industries, job_description, applicant, get_time)
+  }
+  
+  message("Appending new jobs into the existing csv..")
+  write.table(new_jobs_detail,
+              file = "./data/job_scraped.csv", 
+              sep = ",",
+              append = T,
+              row.names = F,
+              col.names = F)
+  
+  posted_df <- new_jobs_detail %>%
+    group_nest(row_number()) %>% 
+    pull(data) %>%
+    map_dfr(send_message, bot_token = bot_token, chat_id = chat_id)
+  
+  message("Appending posted job info to the existing csv..")
+  write.table(posted_df,
+              file = "./data/job_posted.csv", 
+              sep = ",",
+              append = T,
+              row.names = F,
+              col.names = F)
+  
+  message("Done!")
+  
+}
+
+job_info_df <- tibble(job_url = "https://www.disnakerja.com/pt-solusi-energy-nusantara-pgas-group/")
+
+enrich_disnakerja <- function(job_info_df){
+  url <- job_info_df$job_url
+  glue("Getting Job Details for {job_info_df$job_company}") %>% print()
+  
+  Sys.sleep(1)
+  
+  read_page <- GET(url, add_headers('user-agent' = sample(user_agent_list, 1)))  %>%
+    safe_read_html()
+  
+  page <- read_page$result
+  
+  if(!is.null(page)){
     
+    job_title <- tryCatch({page %>%
+      html_element("div[class='entry-meta'] > span") %>%
+      html_text2() %>%
+      paste0(" Posisi")}, 
+      error = function(e) NA)
+    job_title <- ifelse(is_empty(job_title), NA, job_title)
+    
+    specs_raw <- tryCatch({page %>% 
+      html_element("div[id = 'specs'] > ul") %>%
+      html_elements("li")}, 
+      error = function(e) NA)
+    if(all(sapply(specs_raw, genTS::is_empty))){
+      specs_raw <- NA
+    } 
+    
+    job_location <- tryCatch({specs_raw[3] %>% 
+      html_text2() %>%
+      str_remove_all("Lokasi:") %>%
+      str_squish()}, 
+      error = function(e) NA)
+    job_location <- ifelse(is_empty(job_location), NA, job_location)
+    
+    employment_type <-  tryCatch({specs_raw[4] %>%
+      html_text2() %>%
+      str_remove_all("Tipe Pekerjaan:") %>%
+      str_squish()}, 
+      error = function(e) NA)
+    employment_type <- ifelse(is_empty(employment_type), NA, employment_type)
+    
+    seniority_level <- tryCatch({specs_raw[6] %>%
+      html_text2() %>%
+      str_remove_all("Pengalaman:") %>%
+      str_squish()}, 
+      error = function(e) NA)
+    seniority_level <- ifelse(is_empty(seniority_level), NA, seniority_level)
+    
+    job_list_date <- tryCatch({specs_raw[1] %>%
+      html_element("time[itemprop = 'datePublished']") %>%
+      html_attr("datetime") %>%
+      as.Date()}, 
+      error = function(e) NA)
+    if(is_empty(job_list_date)){
+      job_list_date <- NA
+    }
+    
+    description_raw <- tryCatch({page %>%
+      html_element("div[id = 'description']") %>% 
+      html_children() %>%
+      head(-4) %>%
+      tail(-2)}, 
+      error = function(e) NA)
+    
+    job_description <- tryCatch({description_raw %>%
+        as.character() %>%
+        str_flatten()  %>%
+        str_remove_all("\n|\t") %>% 
+        str_replace_all('[\"]',  "'") %>%
+        str_squish() %>%
+        str_replace_all("<p><br></p>", "\n\n") %>%
+        str_replace_all("</ul>", "\n\n") %>%
+        str_replace_all("<(h[1-9]).*?>", "<strong>") %>%
+        str_replace_all("</(h[1-9])>", "</strong>") %>%
+        str_remove_all("<div.*?>|<div>|</div>|<ul.*?>|<ul>|</li>|</p>|</ol>|</br>|<span.*?>|<span>|</span>|<script.*?>|</script>|<ins.*?>|</ins>|<hr.*?>|</hr>|<img.*?>|</img>|<noscript>|</noscript>|<iframe.*?>|</iframe>|<table.*?>|</table>|<tbody.*?>|</tbody>") %>%
+        str_remove_all(fixed("(adsbygoogle = window.adsbygoogle || []).push({});")) %>%
+        str_remove_all("<!--.*?-->") %>%
+        str_replace_all("<tr>|</tr>|<td.*?>|</td>", "\n") %>%
+        str_replace_all("<p.*?>|<ol>|<br>", "\n\n") %>%
+        str_replace_all("<li>|<li.*?>", "\n • ") %>%
+        str_replace_all("\\n\\s+\\n", "\n\n") %>%
+        str_replace_all("\n\n<b>\n\n", "<b>\n\n") %>%
+        str_remove_all("•  \n|• \n|• \n\n") %>%
+        str_replace_all("  •", " •") %>%
+        str_replace_all("(\n{2})\n+", "\n\n")  %>%
+        str_replace_all("\n\n</strong>\n", "\n</strong>\n")}, 
+        error = function(e) NA)
+    job_description <- ifelse(is_empty(job_description), NA, job_description)
+    
+    job_salary <- NA
+    applicant <- NA
+    get_time <- Sys.time()
+    
+    result_df <- tryCatch({cbind(job_info_df, job_title, job_location, job_salary, job_list_date, seniority_level, job_description, employment_type, applicant, get_time) %>%
+        select("source", "job_id", "job_url", "job_title", "job_company", 
+               "job_location", "job_salary", "job_list_date", "seniority_level", 
+               "employment_type", "industries", "job_description", "applicant", 
+               "get_time")},
+        error = function(e) {
+          cbind(job_info_df, job_location = NA, job_salary = NA, job_list_date = NA, seniority_level = NA, job_description = "Error", employment_type = NA, applicant = NA, get_time = NA) %>%
+            select("source", "job_id", "job_url", "job_title", "job_company", 
+                   "job_location", "job_salary", "job_list_date", "seniority_level", 
+                   "employment_type", "industries", "job_description", "applicant", 
+                   "get_time")
+        })
+    
+  } else{
+    error_message <- read_page$error %>% as.character()
+    result_df <- cbind(job_info_df, job_location = error_message, job_salary = NA, job_list_date = error_message, seniority_level = NA, job_description = error_message, employment_type = NA, applicant = NA, get_time = NA) %>%
+      select("source", "job_id", "job_url", "job_title", "job_company", 
+             "job_location", "job_salary", "job_list_date", "seniority_level", 
+             "employment_type", "industries", "job_description", "applicant", 
+             "get_time")
+  }
+  
+}
+
+tezz <- 
+
+# 
+# if(nchar(job_description) > 500 ){
+#   job_description <- substr(job_description, 1, 500)
+# }
+# 
+# 
+bot_token <- "6224206664:AAEJuMYHxmqwl9dIda6cst3K_vpr_Xo2GAE"
+chat_id <- 1415309056
+#
+bot <- Bot(token = bot_token)
+bot$sendMessage(chat_id = 1415309056, text = job_description, parse_mode = "html")
 
 
 get_disnakerja <- function(all_jobs_page, industries){
